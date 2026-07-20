@@ -1,22 +1,23 @@
 import os
 import logging
 from telegram import Update
-from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 
+# Setup logging
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
 logger = logging.getLogger(__name__)
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("👋 Hello! I'm your bot.")
+def start(update: Update, context: CallbackContext):
+    update.message.reply_text("👋 Hello! I'm your bot. Use /help")
 
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Commands: /start, /help")
+def help_command(update: Update, context: CallbackContext):
+    update.message.reply_text("Commands: /start, /help")
 
-async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(f"You said: {update.message.text}")
+def echo(update: Update, context: CallbackContext):
+    update.message.reply_text(f"You said: {update.message.text}")
 
 if __name__ == '__main__':
     token = os.environ.get('TELEGRAM_BOT_TOKEN')
@@ -28,14 +29,19 @@ if __name__ == '__main__':
     logger.info("✅ Starting bot...")
     
     try:
-        # Using Application directly (not ApplicationBuilder)
-        app = Application.builder().token(token).build()
-        app.add_handler(CommandHandler('start', start))
-        app.add_handler(CommandHandler('help', help_command))
-        app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
+        # Using Updater (older style that works with all versions)
+        updater = Updater(token=token, use_context=True)
+        dp = updater.dispatcher
+        
+        # Add handlers
+        dp.add_handler(CommandHandler("start", start))
+        dp.add_handler(CommandHandler("help", help_command))
+        dp.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
         
         logger.info("✅ Bot is running!")
-        app.run_polling()
+        updater.start_polling()
+        updater.idle()
+        
     except Exception as e:
         logger.error(f"❌ Error: {e}")
         exit(1)
