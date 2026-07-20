@@ -1,7 +1,7 @@
 import os
 import logging
-from telegram import Bot, Update
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from telegram import Update
+from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -9,14 +9,14 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def start(update, context):
-    update.message.reply_text("👋 Hello! I'm your bot. Use /help")
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("👋 Hello! I'm your bot. Use /help")
 
-def help_command(update, context):
-    update.message.reply_text("Commands: /start, /help")
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Commands: /start, /help")
 
-def echo(update, context):
-    update.message.reply_text(f"You said: {update.message.text}")
+async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(f"You said: {update.message.text}")
 
 def main():
     token = os.environ.get('TELEGRAM_BOT_TOKEN')
@@ -28,16 +28,13 @@ def main():
     logger.info("✅ Starting bot...")
     
     try:
-        updater = Updater(token=token, use_context=True)
-        dp = updater.dispatcher
-        
-        dp.add_handler(CommandHandler("start", start))
-        dp.add_handler(CommandHandler("help", help_command))
-        dp.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
+        app = Application.builder().token(token).build()
+        app.add_handler(CommandHandler('start', start))
+        app.add_handler(CommandHandler('help', help_command))
+        app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
         
         logger.info("✅ Bot is running!")
-        updater.start_polling()
-        updater.idle()
+        app.run_polling()
         
     except Exception as e:
         logger.error(f"❌ Error: {e}")
